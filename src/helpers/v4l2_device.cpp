@@ -193,7 +193,15 @@ int V4l2Device::DequeueBuffer(unsigned int timeout_ms)
 	short int poll_event = isOutput() ? POLLOUT : POLLIN;
 	pollfd p = { fd_.Get(), poll_event, 0 };
 
-	int ret = poll(&p, 1, timeout_ms);
+    int ret;
+    do
+    {
+        int poll_timeout = timeout_ms == 0 ? 1000 : timeout_ms;
+        ret = poll(&p, 1, poll_timeout);
+        if (timeout_ms != 0 || ret != 0)
+            break;
+        // If timeout_ms == 0 and ret == 0, loop again (poll timed out)
+    } while (timeout_ms == 0);
 	if (ret <= 0)
 		return -1;
 
